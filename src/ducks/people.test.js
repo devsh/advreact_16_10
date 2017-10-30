@@ -21,5 +21,4 @@ it('should add person', () => {
         type: ADD_PERSON,
         payload: { id, ...person }
     }))
-
 })

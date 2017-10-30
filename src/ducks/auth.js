@@ -14,7 +14,9 @@ export const SIGN_UP_START = `${prefix}/SIGN_UP_START`
 export const SIGN_UP_SUCCESS = `${prefix}/SIGN_UP_SUCCESS`
 export const SIGN_UP_ERROR = `${prefix}/SIGN_UP_ERROR`
 
+export const SIGN_IN_REQUEST = `${prefix}/SIGN_IN_REQUEST`
 export const SIGN_IN_SUCCESS = `${prefix}/SIGN_IN_SUCCESS`
+export const SIGN_IN_ERROR = `${prefix}/SIGN_IN_ERROR`
 
 /**
  * Reducer
@@ -29,6 +31,7 @@ export default function reducer(state = new ReducerRecord(), action) {
     const {type, payload} = action
 
     switch (type) {
+        case SIGN_IN_REQUEST:
         case SIGN_UP_START:
             return state.set('loading', true)
 
@@ -49,6 +52,7 @@ export default function reducer(state = new ReducerRecord(), action) {
 
 export const stateSelector = state => state[moduleName]
 export const userSelector = createSelector(stateSelector, state => state.user)
+export const loadingSelector = createSelector(stateSelector, state => state.loading)
 
 /**
  * Action Creators
@@ -56,6 +60,13 @@ export const userSelector = createSelector(stateSelector, state => state.user)
 export function signUp(email, password) {
     return {
         type: SIGN_UP_START,
+        payload: { email, password }
+    }
+}
+
+export function signIn(email, password) {
+    return {
+        type: SIGN_IN_REQUEST,
         payload: { email, password }
     }
 }
@@ -96,8 +107,31 @@ export function * signUpSaga() {
     }
 }
 
+export function * signInSaga() {
+    const auth = firebase.auth()
+
+    while (true) {
+        const {payload} = yield take(SIGN_IN_REQUEST)
+
+        try {
+            const user = yield call([auth, auth.signInWithEmailAndPassword], payload.email, payload.password)
+
+            yield put({
+                type: SIGN_IN_SUCCESS,
+                payload: {user}
+            })
+        } catch (error) {
+            yield put({
+                type: SIGN_IN_ERROR,
+                payload: {error}
+            })
+        }
+    }
+}
+
 export function * saga() {
     yield all([
-        signUpSaga()
+        signUpSaga(),
+        signInSaga()
     ])
 }
